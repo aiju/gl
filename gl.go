@@ -23,7 +23,7 @@ func Disable(mask int) {
 }
 
 func ClearColor(r int, g int, b int, a int) {
-	C.glClearColor(C.GLclampf(r),C.GLclampf(g),C.GLclampf(b),C.GLclampf(a))
+	C.glClearColor(C.GLclampf(r), C.GLclampf(g), C.GLclampf(b), C.GLclampf(a))
 }
 
 func Clear(mask int) {
@@ -52,25 +52,25 @@ func toCtype(data interface{}) (p unsafe.Pointer, t C.GLenum, ts int, s uintptr)
 		panic("not a pointer or slice")
 	}
 	switch et.Kind() {
-        case reflect.Uint8:
-                t = UNSIGNED_BYTE
-        case reflect.Int8:
-                t = BYTE
-        case reflect.Uint16:
-                t = UNSIGNED_SHORT
-        case reflect.Int16:
-                t = SHORT
-        case reflect.Uint32:
-                t = UNSIGNED_INT
-        case reflect.Int32:
-                t = INT
-        case reflect.Float32:
-                t = FLOAT
-        case reflect.Float64:
-                t = DOUBLE
-        default:
-                panic("unknown type: " + reflect.TypeOf(v).String())
-        }
+	case reflect.Uint8:
+		t = UNSIGNED_BYTE
+	case reflect.Int8:
+		t = BYTE
+	case reflect.Uint16:
+		t = UNSIGNED_SHORT
+	case reflect.Int16:
+		t = SHORT
+	case reflect.Uint32:
+		t = UNSIGNED_INT
+	case reflect.Int32:
+		t = INT
+	case reflect.Float32:
+		t = FLOAT
+	case reflect.Float64:
+		t = DOUBLE
+	default:
+		panic("unknown type: " + reflect.TypeOf(v).String())
+	}
 	ts = et.Bits() / 8
 	s *= uintptr(et.Bits() / 8)
 
@@ -78,8 +78,8 @@ func toCtype(data interface{}) (p unsafe.Pointer, t C.GLenum, ts int, s uintptr)
 }
 
 type Buffer struct {
-	i C.GLuint
-	t C.GLenum
+	i  C.GLuint
+	t  C.GLenum
 	ts int
 }
 
@@ -179,7 +179,7 @@ func (p Program) EnableAttrib(loc string, buf *Buffer, offset int, size int, str
 	buf.Bind(ARRAY_BUFFER)
 	attr := C.GLuint(C.glGetAttribLocation(C.GLuint(p), (*C.GLchar)(C.CString(loc))))
 	C.glEnableVertexAttribArray(attr)
-	C.glVertexAttribPointer(attr, C.GLint(size), buf.t, C.GLboolean(n), C.GLsizei(stride * buf.ts), unsafe.Pointer(uintptr(buf.ts * offset)))
+	C.glVertexAttribPointer(attr, C.GLint(size), buf.t, C.GLboolean(n), C.GLsizei(stride*buf.ts), unsafe.Pointer(uintptr(buf.ts*offset)))
 	buf.Unbind(ARRAY_BUFFER)
 }
 
@@ -285,11 +285,11 @@ func NewTexture2D(img image.Image, border int) Texture {
 	for x := r.Min.X; x < r.Max.X; x++ {
 		for y := r.Min.Y; y < r.Max.Y; y++ {
 			R, G, B, A := img.At(x, y).RGBA()
-			i := (y * r.Dx() + x) * 4
+			i := (y*r.Dx() + x) * 4
 			data[i] = uint16(R)
-			data[i + 1] = uint16(G)
-			data[i + 2] = uint16(B)
-			data[i + 3] = uint16(A)
+			data[i+1] = uint16(G)
+			data[i+2] = uint16(B)
+			data[i+3] = uint16(A)
 		}
 	}
 	C.glTexImage2D(TEXTURE_2D, 0, RGBA, C.GLsizei(img.Bounds().Dx()), C.GLsizei(img.Bounds().Dy()), C.GLint(border), RGBA, UNSIGNED_SHORT, unsafe.Pointer(&data[0]))

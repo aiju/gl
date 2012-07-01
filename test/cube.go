@@ -1,16 +1,16 @@
 package main
 
 import (
-	"time"
 	"fmt"
-	"os"
-	"github.com/aiju/gl"
 	"github.com/0xe2-0x9a-0x9b/Go-SDL/sdl"
+	"github.com/aiju/gl"
 	"image"
 	_ "image/png"
+	"os"
+	"time"
 )
 
-var Vertices = []float64 {
+var Vertices = []float64{
 	-1, 1, -1, 0, 0,
 	1, 1, -1, 1, 0,
 	-1, -1, -1, 0, 1,
@@ -84,7 +84,7 @@ func main() {
 			if _, ok := ev.(sdl.QuitEvent); ok {
 				return
 			}
-		case <- tick:
+		case <-tick:
 			gl.ClearColor(0, 0, 0, 1)
 			gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
