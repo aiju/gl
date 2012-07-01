@@ -38,6 +38,10 @@ func DepthRange(zNear, zFar float64) {
 	C.glDepthRange(C.GLclampd(zNear), C.GLclampd(zFar))
 }
 
+func BlendFunc(sfactor, dfactor int) {
+	C.glBlendFunc(C.GLenum(sfactor), C.GLenum(dfactor))
+}
+
 func toCtype(data interface{}) (p unsafe.Pointer, t C.GLenum, ts int, s uintptr) {
 	v := reflect.ValueOf(data)
 	var et reflect.Type
