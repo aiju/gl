@@ -332,6 +332,12 @@ func (Texture) Unbind(targ int) {
 	C.glBindTexture(C.GLenum(targ), 0)
 }
 
+func (t Texture) TexParameteri(targ, pname, param int) {
+	t.Bind(targ)
+	C.glTexParameteri(C.GLenum(targ), C.GLenum(pname), C.GLint(param))
+	t.Unbind(targ)
+}
+
 func (t Texture) Enable(unit int, targ int) {
 	C.glActiveTexture(TEXTURE0 + C.GLenum(unit))
 	t.Bind(targ)
