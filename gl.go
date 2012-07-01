@@ -308,11 +308,11 @@ func (Texture) Unbind(targ int) {
 }
 
 func (t Texture) Enable(unit int, targ int) {
-	C.glActiveTexture(C.GLenum(unit))
+	C.glActiveTexture(TEXTURE0 + C.GLenum(unit))
 	t.Bind(targ)
 }
 
 func (t Texture) Disable(unit int, targ int) {
-	C.glActiveTexture(C.GLenum(unit))
+	C.glActiveTexture(TEXTURE0 + C.GLenum(unit))
 	t.Unbind(targ)
 }

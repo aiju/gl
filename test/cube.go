@@ -48,7 +48,7 @@ uniform sampler2D tex;
 varying vec2 texco;
 
 void main() {
-	gl_FragColor = texture2D(tex, texco) * gl_FragCoord.z;
+	gl_FragColor = texture2D(tex, texco);
 }
 `
 
@@ -57,7 +57,6 @@ func main() {
 	sdl.SetVideoMode(800, 600, 32, sdl.OPENGL)
 	gl.Init()
 	gl.Enable(gl.DEPTH_TEST)
-	gl.DepthRange(0, 1)
 	gl.Viewport(0, 0, 800, 600)
 	tick := time.Tick(time.Second / 50)
 	timer := 0.0
@@ -94,7 +93,7 @@ func main() {
 			prog.EnableAttrib("texcoord", posbuf, 3, 2, 5, false)
 			prog.SetUniform("tex", 0)
 			prog.SetUniform("matrix", mat)
-			tex.Enable(gl.TEXTURE0, gl.TEXTURE_2D)
+			tex.Enable(0, gl.TEXTURE_2D)
 			gl.DrawArrays(gl.TRIANGLE_STRIP, 0, len(Vertices)/5)
 			prog.DisableAttrib("position")
 			prog.Unuse()
