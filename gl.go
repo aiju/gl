@@ -42,6 +42,23 @@ func BlendFunc(sfactor, dfactor int) {
 	C.glBlendFunc(C.GLenum(sfactor), C.GLenum(dfactor))
 }
 
+func ColorMask(r, g, b, a bool) {
+	R, G, B, A := FALSE, FALSE, FALSE, FALSE
+	if r {
+		R = TRUE
+	}
+	if g {
+		G = TRUE
+	}
+	if b {
+		B = TRUE
+	}
+	if a {
+		A = TRUE
+	}
+	C.glColorMask(C.GLboolean(R), C.GLboolean(G), C.GLboolean(B), C.GLboolean(A))
+}
+
 func toCtype(data interface{}) (p unsafe.Pointer, t C.GLenum, ts int, s uintptr) {
 	v := reflect.ValueOf(data)
 	var et reflect.Type
