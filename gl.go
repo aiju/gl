@@ -42,6 +42,10 @@ func BlendFunc(sfactor, dfactor int) {
 	C.glBlendFunc(C.GLenum(sfactor), C.GLenum(dfactor))
 }
 
+func PolygonMode(face, mode int) {
+	C.glPolygonMode(C.GLenum(face), C.GLenum(mode))
+}
+
 func ColorMask(r, g, b, a bool) {
 	R, G, B, A := FALSE, FALSE, FALSE, FALSE
 	if r {
