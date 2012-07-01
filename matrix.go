@@ -71,3 +71,10 @@ func Frustum(fov, aspect, zNear, zFar float64) Mat4 {
 		[4]float64{0, 0, (zNear + zFar) / (zNear - zFar), (2 * zNear * zFar) / (zNear - zFar)},
 		[4]float64{0, 0, -1, 0}}
 }
+
+func Scale(x, y, z float64) Mat4 {
+	return Mat4{[4]float64{x, 0, 0, 0},
+		[4]float64{0, y, 0, 0},
+		[4]float64{0, 0, z, 0},
+		[4]float64{0, 0, 0, 1}}
+}
