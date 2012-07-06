@@ -126,7 +126,7 @@ func (buf *Buffer) Set(targ int, data interface{}, usage int) {
 	C.glBufferData(C.GLenum(targ), C.GLsizeiptr(s), p, C.GLenum(usage))
 	buf.t = t
 	buf.ts = ts
-	buf.Unbind(ARRAY_BUFFER)
+	buf.Unbind(targ)
 }
 
 func (buf *Buffer) Bind(targ int) {
@@ -156,65 +156,83 @@ func NewShader(typ int, src string) (Shader, error) {
 	return Shader(shad), nil
 }
 
-type Program C.GLuint
-
-func NewProgram() Program {
-	return Program(C.glCreateProgram())
+type Program struct {
+	i C.GLuint
+	attr map[string] C.GLuint
+	uni map[string] C.GLint
 }
 
-func (p Program) Attach(s Shader) {
-	C.glAttachShader(C.GLuint(p), C.GLuint(s))
+func NewProgram() *Program {
+	return &Program{i: C.glCreateProgram()}
 }
 
-func (p Program) Detach(s Shader) {
-	C.glDetachShader(C.GLuint(p), C.GLuint(s))
+func (p *Program) Attach(s Shader) {
+	C.glAttachShader(p.i, C.GLuint(s))
 }
 
-func (p Program) Delete() {
-	C.glDeleteProgram(C.GLuint(p))
+func (p *Program) Detach(s Shader) {
+	C.glDetachShader(p.i, C.GLuint(s))
 }
 
-func (p Program) Use() {
-	C.glUseProgram(C.GLuint(p))
+func (p *Program) Delete() {
+	C.glDeleteProgram(p.i)
 }
 
-func (p Program) Unuse() {
+func (p *Program) Use() {
+	C.glUseProgram(p.i)
+}
+
+func (p *Program) Unuse() {
 	C.glUseProgram(C.GLuint(0))
 }
 
-func (p Program) Link() error {
-	var val C.GLint
-	pi := C.GLuint(p)
-	C.glLinkProgram(pi)
-	C.glGetProgramiv(pi, LINK_STATUS, &val)
+func (p *Program) Link() error {
+	var val, val2 C.GLint
+	C.glLinkProgram(p.i)
+	C.glGetProgramiv(p.i, LINK_STATUS, &val)
 	if val != TRUE {
-		C.glGetProgramiv(pi, INFO_LOG_LENGTH, &val)
+		C.glGetProgramiv(p.i, INFO_LOG_LENGTH, &val)
 		buf := make([]C.GLchar, val+1)
-		C.glGetProgramInfoLog(pi, C.GLsizei(val), nil, &buf[0])
+		C.glGetProgramInfoLog(p.i, C.GLsizei(val), nil, &buf[0])
 		return errors.New(C.GoString((*C.char)(&buf[0])))
+	}
+	p.attr = make(map[string] C.GLuint)
+	C.glGetProgramiv(p.i, ACTIVE_ATTRIBUTES, &val)
+	C.glGetProgramiv(p.i, ACTIVE_ATTRIBUTE_MAX_LENGTH, &val2)
+	buf := make([]C.char, val2)
+	for i := C.GLuint(0); i < C.GLuint(val); i++ {
+		C.glGetActiveAttrib(p.i, i, C.GLsizei(val2), nil, nil, nil, (*C.GLchar)(&buf[0]))
+		p.attr[C.GoString(&buf[0])] = C.GLuint(C.glGetAttribLocation(p.i, (*C.GLchar)(&buf[0])))
+	}
+	p.uni = make(map[string] C.GLint)
+	C.glGetProgramiv(p.i, ACTIVE_UNIFORMS, &val)
+	C.glGetProgramiv(p.i, ACTIVE_UNIFORM_MAX_LENGTH, &val2)
+	buf = make([]C.char, val2)
+	for i := C.GLuint(0); i < C.GLuint(val); i++ {
+		C.glGetActiveUniform(p.i, i, C.GLsizei(val2), nil, nil, nil, (*C.GLchar)(&buf[0]))
+		p.uni[C.GoString(&buf[0])] = C.glGetUniformLocation(p.i, (*C.GLchar)(&buf[0]))
 	}
 	return nil
 }
 
-func (p Program) EnableAttrib(loc string, buf *Buffer, offset int, size int, stride int, norm bool) {
+func (p *Program) EnableAttrib(loc string, buf *Buffer, offset int, size int, stride int, norm bool) {
 	n := FALSE
 	if norm {
 		n = TRUE
 	}
 	buf.Bind(ARRAY_BUFFER)
-	attr := C.GLuint(C.glGetAttribLocation(C.GLuint(p), (*C.GLchar)(C.CString(loc))))
+	attr := p.attr[loc]
 	C.glEnableVertexAttribArray(attr)
 	C.glVertexAttribPointer(attr, C.GLint(size), buf.t, C.GLboolean(n), C.GLsizei(stride*buf.ts), unsafe.Pointer(uintptr(buf.ts*offset)))
 	buf.Unbind(ARRAY_BUFFER)
 }
 
-func (p Program) DisableAttrib(loc string) {
-	attr := C.GLuint(C.glGetAttribLocation(C.GLuint(p), (*C.GLchar)(C.CString(loc))))
-	C.glDisableVertexAttribArray(attr)
+func (p *Program) DisableAttrib(loc string) {
+	C.glDisableVertexAttribArray(p.attr[loc])
 }
 
-func (p Program) SetUniform(loc string, data interface{}) {
-	uni := C.glGetUniformLocation(C.GLuint(p), (*C.GLchar)(C.CString(loc)))
+func (p *Program) SetUniform(loc string, data interface{}) {
+	uni := p.uni[loc]
 	switch f := data.(type) {
 	case float32:
 		C.glUniform1f(uni, C.GLfloat(f))
@@ -272,13 +290,13 @@ func (p Program) SetUniform(loc string, data interface{}) {
 	}
 }
 
-func MakeProgram(vertex []string, fragment []string) (Program, error) {
+func MakeProgram(vertex []string, fragment []string) (*Program, error) {
 	p := NewProgram()
 	for _, s := range vertex {
 		shad, err := NewShader(VERTEX_SHADER, s)
 		if err != nil {
 			p.Delete()
-			return Program(0), err
+			return nil, err
 		}
 		p.Attach(shad)
 	}
@@ -286,11 +304,16 @@ func MakeProgram(vertex []string, fragment []string) (Program, error) {
 		shad, err := NewShader(FRAGMENT_SHADER, s)
 		if err != nil {
 			p.Delete()
-			return Program(0), err
+			return nil, err
 		}
 		p.Attach(shad)
 	}
-	return p, p.Link()
+	err := p.Link()
+	if err != nil {
+		p.Delete()
+		return nil, err
+	}
+	return p, nil
 }
 
 func DrawArrays(mode, first, count int) {
