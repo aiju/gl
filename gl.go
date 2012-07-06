@@ -1,3 +1,7 @@
+// The package gl provides Go bindings for OpenGL.
+// Some of the more awkward parts of the library are wrapped to provide idiomatic Go behaviour for e.g. error handling.
+// Constants have their GL_ prefix removed when possible, i.e. unless they start with a number.
+// This package uses the intersection of OpenGL 2.1 and OpenGL 3.2 core. Legacy features are not retained.
 package gl
 
 // #cgo linux LDFLAGS: -lGLEW
@@ -14,38 +18,47 @@ func Init() {
 	C.glewInit()
 }
 
+// Enable calls glEnable
 func Enable(mask int) {
 	C.glEnable(C.GLenum(mask))
 }
 
+// Disable calls glDisable
 func Disable(mask int) {
 	C.glDisable(C.GLenum(mask))
 }
 
+// ClearColor calls glClearColor
 func ClearColor(r int, g int, b int, a int) {
 	C.glClearColor(C.GLclampf(r), C.GLclampf(g), C.GLclampf(b), C.GLclampf(a))
 }
 
+// Clear calls glClear
 func Clear(mask int) {
 	C.glClear(C.GLbitfield(mask))
 }
 
+// Viewport calls glViewport
 func Viewport(x int, y int, w int, h int) {
 	C.glViewport(C.GLint(x), C.GLint(y), C.GLsizei(w), C.GLsizei(h))
 }
 
+// DepthRange calls glDepthRange
 func DepthRange(zNear, zFar float64) {
 	C.glDepthRange(C.GLclampd(zNear), C.GLclampd(zFar))
 }
 
+// BlendFunc calls glBlendFunc
 func BlendFunc(sfactor, dfactor int) {
 	C.glBlendFunc(C.GLenum(sfactor), C.GLenum(dfactor))
 }
 
+// PolygonMode calls glPolygonMode
 func PolygonMode(face, mode int) {
 	C.glPolygonMode(C.GLenum(face), C.GLenum(mode))
 }
 
+// ColorMask calls glColorMask
 func ColorMask(r, g, b, a bool) {
 	R, G, B, A := FALSE, FALSE, FALSE, FALSE
 	if r {
@@ -102,12 +115,14 @@ func toCtype(data interface{}) (p unsafe.Pointer, t C.GLenum, ts int, s uintptr)
 	return
 }
 
+// the type Buffer represents a buffer object
 type Buffer struct {
 	i  C.GLuint
 	t  C.GLenum
 	ts int
 }
 
+// NewBuffer creates a new buffer using glGenBuffers. If targ is not 0, it will call Buffer.Set with the given parameters.
 func NewBuffer(targ int, data interface{}, usage int) *Buffer {
 	var buf C.GLuint
 
@@ -120,6 +135,7 @@ func NewBuffer(targ int, data interface{}, usage int) *Buffer {
 	return buff
 }
 
+// Set calls glBufferData with appropriate arguments to load the data pointed to by data into the buffer. usage is passed along verbatim. targ is used for binding and it should most likely be ARRAY_BUFFER.
 func (buf *Buffer) Set(targ int, data interface{}, usage int) {
 	buf.Bind(targ)
 	p, t, ts, s := toCtype(data)
@@ -129,16 +145,20 @@ func (buf *Buffer) Set(targ int, data interface{}, usage int) {
 	buf.Unbind(targ)
 }
 
+// Bind calls glBindBuffer
 func (buf *Buffer) Bind(targ int) {
 	C.glBindBuffer(C.GLenum(targ), buf.i)
 }
 
+// Unbind calls glBindBuffer with a 0 argument
 func (*Buffer) Unbind(targ int) {
 	C.glBindBuffer(C.GLenum(targ), 0)
 }
 
+// The type Shader represents a shader.
 type Shader C.GLuint
 
+// NewShader creates a shader object of type typ, loads it with source code src and compiles it
 func NewShader(typ int, src string) (Shader, error) {
 	var val C.GLint
 	shad := C.glCreateShader(C.GLenum(typ))
@@ -156,36 +176,44 @@ func NewShader(typ int, src string) (Shader, error) {
 	return Shader(shad), nil
 }
 
+// The type Program represents a shader program. It contains maps to cache the location of attributes and uniforms.
 type Program struct {
 	i C.GLuint
 	attr map[string] C.GLuint
 	uni map[string] C.GLint
 }
 
+// NewProgram creates an empty program
 func NewProgram() *Program {
 	return &Program{i: C.glCreateProgram()}
 }
 
+// Attach attaches a shader object
 func (p *Program) Attach(s Shader) {
 	C.glAttachShader(p.i, C.GLuint(s))
 }
 
+// Detach detaches a shader object
 func (p *Program) Detach(s Shader) {
 	C.glDetachShader(p.i, C.GLuint(s))
 }
 
+// Delete deletes the program object
 func (p *Program) Delete() {
 	C.glDeleteProgram(p.i)
 }
 
+// Use calls glUseProgram
 func (p *Program) Use() {
 	C.glUseProgram(p.i)
 }
 
+// Unuse calls glUseProgram with a 0 argument
 func (p *Program) Unuse() {
 	C.glUseProgram(C.GLuint(0))
 }
 
+// Link links the attached shader objects
 func (p *Program) Link() error {
 	var val, val2 C.GLint
 	C.glLinkProgram(p.i)
@@ -215,6 +243,9 @@ func (p *Program) Link() error {
 	return nil
 }
 
+// EnableAttrib calls glEnableVertexAttribArray and glVertexAttribPointer to activate an attribute and connect it to a buffer object.
+// offset specifies the first vertex, stride specifies the distance from the beginning of one vertex to the next, size specifies the number of components in a vertex (all these arguments are in units of array elements, not bytes like the underlying API).
+// The byte offset of component j of vertex i is thus calculated as: sizeof(data[0]) * (offset + stride * i + j), where data is the parameter passed to Buffer.Set
 func (p *Program) EnableAttrib(loc string, buf *Buffer, offset int, size int, stride int, norm bool) {
 	n := FALSE
 	if norm {
@@ -227,10 +258,14 @@ func (p *Program) EnableAttrib(loc string, buf *Buffer, offset int, size int, st
 	buf.Unbind(ARRAY_BUFFER)
 }
 
+// DisableAttrib calls glDisableVertexAttribArray
 func (p *Program) DisableAttrib(loc string) {
 	C.glDisableVertexAttribArray(p.attr[loc])
 }
 
+// SetUniform sets a uniform variable using the appropriate glUniform* or glUniformMatrix* call. It supports arrays of float32 and float64 or Mat4 objects.
+// NB: The underlying API does not support double precision, being able to pass float64 values is for convenience only.
+// BUG: It does not support non-square matrices.
 func (p *Program) SetUniform(loc string, data interface{}) {
 	uni := p.uni[loc]
 	switch f := data.(type) {
@@ -290,6 +325,7 @@ func (p *Program) SetUniform(loc string, data interface{}) {
 	}
 }
 
+// MakeProgram is a convenience routine which calls NewProgram(), NewShader(), Shader.Attach() and Program.Link() to create a shader program object.
 func MakeProgram(vertex []string, fragment []string) (*Program, error) {
 	p := NewProgram()
 	for _, s := range vertex {
@@ -316,12 +352,15 @@ func MakeProgram(vertex []string, fragment []string) (*Program, error) {
 	return p, nil
 }
 
+// DrawArrays calls glDrawArrays
 func DrawArrays(mode, first, count int) {
 	C.glDrawArrays(C.GLenum(mode), C.GLint(first), C.GLsizei(count))
 }
 
+// The type Texture represents a texture object.
 type Texture C.GLuint
 
+// NewTexture2D creates a new texture object from the given image using glTexImage2D. It uses RGBA as a color format and sets GL_TEXTURE_{MIN,MAG}_FILTER to GL_NEAREST
 func NewTexture2D(img image.Image, border int) Texture {
 	var t C.GLuint
 
@@ -347,25 +386,30 @@ func NewTexture2D(img image.Image, border int) Texture {
 	return tt
 }
 
+// Bind calls glBindTexture
 func (t Texture) Bind(targ int) {
 	C.glBindTexture(C.GLenum(targ), C.GLuint(t))
 }
 
+// Unbind calls glBindTexture with a 0 argument
 func (Texture) Unbind(targ int) {
 	C.glBindTexture(C.GLenum(targ), 0)
 }
 
+// TexParameteri calls glTexParameteri on the texture. The targ argument is used for binding and should most likely be TEXTURE_2D.
 func (t Texture) TexParameteri(targ, pname, param int) {
 	t.Bind(targ)
 	C.glTexParameteri(C.GLenum(targ), C.GLenum(pname), C.GLint(param))
 	t.Unbind(targ)
 }
 
+// Enable calls glActiveTexture and Bind
 func (t Texture) Enable(unit int, targ int) {
 	C.glActiveTexture(TEXTURE0 + C.GLenum(unit))
 	t.Bind(targ)
 }
 
+// Disable calls glActiveTexture and Unbind
 func (t Texture) Disable(unit int, targ int) {
 	C.glActiveTexture(TEXTURE0 + C.GLenum(unit))
 	t.Unbind(targ)
