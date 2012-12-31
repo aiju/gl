@@ -4,7 +4,9 @@
 // This package uses the intersection of OpenGL 2.1 and OpenGL 3.2 core. Legacy features are not retained.
 package gl
 
-// #cgo linux LDFLAGS: -lGLEW
+// #cgo darwin CFLAGS: -I/opt/local/include/
+// #cgo linux LDFLAGS: -lGLEW 
+// #cgo darwin LDFLAGS: -lGLEW -L/opt/local/lib/ -framework OpenGL
 // #include <GL/glew.h>
 // #undef GLEW_GET_FUN
 // #define GLEW_GET_FUN(x) (*x)
@@ -13,6 +15,7 @@ import "unsafe"
 import "reflect"
 import "errors"
 import "image"
+import "image/color"
 
 func Init() {
 	C.glewInit()
@@ -41,6 +44,20 @@ func Clear(mask int) {
 // Viewport calls glViewport
 func Viewport(x int, y int, w int, h int) {
 	C.glViewport(C.GLint(x), C.GLint(y), C.GLsizei(w), C.GLsizei(h))
+}
+
+// Add the interface to export image
+func ReadPixels(x int,y int, w int, h int)image.Image{
+	data := make([]uint16, 4*w*h)
+	p := unsafe.Pointer(&data[0])
+	C.glReadPixels(C.GLint(x), C.GLint(y), C.GLsizei(w), C.GLsizei(h),C.GLenum(RGBA),C.GLenum(UNSIGNED_SHORT),p)
+	rec := image.Rect(x,y,x+w,y+h)
+	rgba := image.NewRGBA64(rec)
+	for i := 0;i < w*h;i++ {
+		c := color.RGBA64{data[4*i],data[4*i+1],data[4*i+2],data[4*i+3]}
+		rgba.Set(i%w,h-i/w,c)
+	}
+	return rgba
 }
 
 // DepthRange calls glDepthRange
@@ -135,6 +152,13 @@ func NewBuffer(targ int, data interface{}, usage int) *Buffer {
 	return buff
 }
 
+//DeleteBuffer delete the buffer using glDeleteBuffer
+func DeleteBuffers(buffers...*Buffer){
+	for _,buf := range buffers {
+		C.glDeleteBuffers(1,&(buf.i))
+	}
+}
+
 // Set calls glBufferData with appropriate arguments to load the data pointed to by data into the buffer. usage is passed along verbatim. targ is used for binding and it should most likely be ARRAY_BUFFER.
 func (buf *Buffer) Set(targ int, data interface{}, usage int) {
 	buf.Bind(targ)
@@ -143,6 +167,16 @@ func (buf *Buffer) Set(targ int, data interface{}, usage int) {
 	buf.t = t
 	buf.ts = ts
 	buf.Unbind(targ)
+}
+
+func GetIntegerv(targ int,size int)(data []int){
+	data = make([]int,4)
+	var p []C.GLint = make([]C.GLint,size)
+	C.glGetIntegerv(C.GLenum(targ),&p[0])
+	for i := 0;i < size;i++{
+		data[i] = int(p[i])
+	}
+	return
 }
 
 // Bind calls glBindBuffer
