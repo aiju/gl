@@ -89,7 +89,7 @@ func Scale(x, y, z float64) Mat4 {
 }
 
 //calculate the inverse Mat4 of original Mat4
-func (m *Mat4) Inverse() Mat4 {
+func (m Mat4) Inverse() Mat4 {
 	var u = m[0][0]*m[1][1]*m[2][2]*m[3][3] +
 		m[0][0]*m[1][2]*m[2][3]*m[3][1] +
 		m[0][0]*m[1][3]*m[2][1]*m[3][2] +
@@ -146,7 +146,7 @@ func (m *Mat4) Inverse() Mat4 {
 }
 
 //calculate the transpose Mat4 of original Mat4
-func (m *Mat4) Transpose() Mat4 {
+func (m Mat4) Transpose() Mat4 {
 	return Mat4{
 		[4]float64{m[0][0], m[1][0], m[2][0], m[3][0]},
 		[4]float64{m[0][1], m[1][1], m[2][1], m[3][1]},
