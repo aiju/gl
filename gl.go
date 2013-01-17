@@ -32,7 +32,7 @@ func Disable(mask int) {
 }
 
 // ClearColor calls glClearColor
-func ClearColor(r int, g int, b int, a int) {
+func ClearColor(r float64, g float64, b float64, a float64) {
 	C.glClearColor(C.GLclampf(r), C.GLclampf(g), C.GLclampf(b), C.GLclampf(a))
 }
 
@@ -47,15 +47,15 @@ func Viewport(x int, y int, w int, h int) {
 }
 
 // Add the interface to export image
-func ReadPixels(x int,y int, w int, h int)image.Image{
+func ReadPixels(x int, y int, w int, h int) image.Image {
 	data := make([]uint16, 4*w*h)
 	p := unsafe.Pointer(&data[0])
-	C.glReadPixels(C.GLint(x), C.GLint(y), C.GLsizei(w), C.GLsizei(h),C.GLenum(RGBA),C.GLenum(UNSIGNED_SHORT),p)
-	rec := image.Rect(x,y,x+w,y+h)
+	C.glReadPixels(C.GLint(x), C.GLint(y), C.GLsizei(w), C.GLsizei(h), C.GLenum(RGBA), C.GLenum(UNSIGNED_SHORT), p)
+	rec := image.Rect(x, y, x+w, y+h)
 	rgba := image.NewRGBA64(rec)
-	for i := 0;i < w*h;i++ {
-		c := color.RGBA64{data[4*i],data[4*i+1],data[4*i+2],data[4*i+3]}
-		rgba.Set(i%w,h-i/w,c)
+	for i := 0; i < w*h; i++ {
+		c := color.RGBA64{data[4*i], data[4*i+1], data[4*i+2], data[4*i+3]}
+		rgba.Set(i%w, h-i/w, c)
 	}
 	return rgba
 }
@@ -153,9 +153,9 @@ func NewBuffer(targ int, data interface{}, usage int) *Buffer {
 }
 
 //DeleteBuffer delete the buffer using glDeleteBuffer
-func DeleteBuffers(buffers...*Buffer){
-	for _,buf := range buffers {
-		C.glDeleteBuffers(1,&(buf.i))
+func DeleteBuffers(buffers ...*Buffer) {
+	for _, buf := range buffers {
+		C.glDeleteBuffers(1, &(buf.i))
 	}
 }
 
@@ -169,11 +169,11 @@ func (buf *Buffer) Set(targ int, data interface{}, usage int) {
 	buf.Unbind(targ)
 }
 
-func GetIntegerv(targ int,size int)(data []int){
-	data = make([]int,4)
-	var p []C.GLint = make([]C.GLint,size)
-	C.glGetIntegerv(C.GLenum(targ),&p[0])
-	for i := 0;i < size;i++{
+func GetIntegerv(targ int, size int) (data []int) {
+	data = make([]int, 4)
+	var p []C.GLint = make([]C.GLint, size)
+	C.glGetIntegerv(C.GLenum(targ), &p[0])
+	for i := 0; i < size; i++ {
 		data[i] = int(p[i])
 	}
 	return
@@ -212,9 +212,9 @@ func NewShader(typ int, src string) (Shader, error) {
 
 // The type Program represents a shader program. It contains maps to cache the location of attributes and uniforms.
 type Program struct {
-	i C.GLuint
-	attr map[string] C.GLuint
-	uni map[string] C.GLint
+	i    C.GLuint
+	attr map[string]C.GLuint
+	uni  map[string]C.GLint
 }
 
 // NewProgram creates an empty program
@@ -258,7 +258,7 @@ func (p *Program) Link() error {
 		C.glGetProgramInfoLog(p.i, C.GLsizei(val), nil, &buf[0])
 		return errors.New(C.GoString((*C.char)(&buf[0])))
 	}
-	p.attr = make(map[string] C.GLuint)
+	p.attr = make(map[string]C.GLuint)
 	C.glGetProgramiv(p.i, ACTIVE_ATTRIBUTES, &val)
 	C.glGetProgramiv(p.i, ACTIVE_ATTRIBUTE_MAX_LENGTH, &val2)
 	buf := make([]C.char, val2)
@@ -266,7 +266,7 @@ func (p *Program) Link() error {
 		C.glGetActiveAttrib(p.i, i, C.GLsizei(val2), nil, nil, nil, (*C.GLchar)(&buf[0]))
 		p.attr[C.GoString(&buf[0])] = C.GLuint(C.glGetAttribLocation(p.i, (*C.GLchar)(&buf[0])))
 	}
-	p.uni = make(map[string] C.GLint)
+	p.uni = make(map[string]C.GLint)
 	C.glGetProgramiv(p.i, ACTIVE_UNIFORMS, &val)
 	C.glGetProgramiv(p.i, ACTIVE_UNIFORM_MAX_LENGTH, &val2)
 	buf = make([]C.char, val2)
