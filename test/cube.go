@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/0xe2-0x9a-0x9b/Go-SDL/sdl"
+	"github.com/neagix/Go-SDL/sdl"
 	"github.com/aiju/gl"
 	"image"
 	_ "image/png"
@@ -54,7 +54,7 @@ void main() {
 
 func main() {
 	sdl.Init(sdl.INIT_VIDEO)
-	sdl.SetVideoMode(800, 600, 32, sdl.OPENGL)
+	sdl.SetVideoMode(800, 600, 32, sdl.OPENGL|sdl.DOUBLEBUF|sdl.HWSURFACE)
 	gl.Init()
 	gl.Enable(gl.DEPTH_TEST)
 	gl.Viewport(0, 0, 800, 600)
