@@ -254,6 +254,9 @@ func (p *Program) Unuse() {
 // Link links the attached shader objects
 func (p *Program) Link() error {
 	var val, val2 C.GLint
+	var dummys C.GLsizei
+	var dummyi C.GLint
+	var dummye C.GLenum
 	C.glLinkProgram(p.i)
 	C.glGetProgramiv(p.i, LINK_STATUS, &val)
 	if val != TRUE {
@@ -267,7 +270,7 @@ func (p *Program) Link() error {
 	C.glGetProgramiv(p.i, ACTIVE_ATTRIBUTE_MAX_LENGTH, &val2)
 	buf := make([]C.char, val2)
 	for i := C.GLuint(0); i < C.GLuint(val); i++ {
-		C.glGetActiveAttrib(p.i, i, C.GLsizei(val2), nil, nil, nil, (*C.GLchar)(&buf[0]))
+		C.glGetActiveAttrib(p.i, i, C.GLsizei(val2), &dummys, &dummyi, &dummye, (*C.GLchar)(&buf[0]))
 		p.attr[C.GoString(&buf[0])] = C.GLuint(C.glGetAttribLocation(p.i, (*C.GLchar)(&buf[0])))
 	}
 	p.uni = make(map[string]C.GLint)
@@ -275,7 +278,7 @@ func (p *Program) Link() error {
 	C.glGetProgramiv(p.i, ACTIVE_UNIFORM_MAX_LENGTH, &val2)
 	buf = make([]C.char, val2)
 	for i := C.GLuint(0); i < C.GLuint(val); i++ {
-		C.glGetActiveUniform(p.i, i, C.GLsizei(val2), nil, nil, nil, (*C.GLchar)(&buf[0]))
+		C.glGetActiveUniform(p.i, i, C.GLsizei(val2), &dummys, &dummyi, &dummye, (*C.GLchar)(&buf[0]))
 		p.uni[C.GoString(&buf[0])] = C.glGetUniformLocation(p.i, (*C.GLchar)(&buf[0]))
 	}
 	return nil
