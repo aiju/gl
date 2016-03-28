@@ -4,6 +4,8 @@
 // This package uses the intersection of OpenGL 2.1 and OpenGL 3.2 core. Legacy features are not retained.
 package gl
 
+// #cgo windows CFLAGS: -DGLEW_STATIC
+// #cgo windows LDFLAGS: -lglew32s -lopengl32
 // #cgo darwin CFLAGS: -I/opt/local/include/
 // #cgo linux LDFLAGS: -lGL -lGLEW 
 // #cgo darwin LDFLAGS: -lGLEW -L/opt/local/lib/ -framework OpenGL
