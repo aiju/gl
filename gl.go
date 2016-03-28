@@ -18,8 +18,10 @@ import "reflect"
 import "errors"
 import "image"
 import "image/color"
+import "runtime"
 
 func Init() {
+	runtime.LockOSThread()
 	C.glewInit()
 }
 
