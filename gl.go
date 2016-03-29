@@ -293,15 +293,18 @@ func (p *Program) EnableAttrib(loc string, buf *Buffer, offset int, size int, st
 		n = TRUE
 	}
 	buf.Bind(ARRAY_BUFFER)
-	attr := p.attr[loc]
-	C.glEnableVertexAttribArray(attr)
-	C.glVertexAttribPointer(attr, C.GLint(size), buf.t, C.GLboolean(n), C.GLsizei(stride*buf.ts), unsafe.Pointer(uintptr(buf.ts*offset)))
+	if attr, ok := p.attr[loc]; ok {
+		C.glEnableVertexAttribArray(attr)
+		C.glVertexAttribPointer(attr, C.GLint(size), buf.t, C.GLboolean(n), C.GLsizei(stride*buf.ts), unsafe.Pointer(uintptr(buf.ts*offset)))
+	}
 	buf.Unbind(ARRAY_BUFFER)
 }
 
 // DisableAttrib calls glDisableVertexAttribArray
 func (p *Program) DisableAttrib(loc string) {
-	C.glDisableVertexAttribArray(p.attr[loc])
+	if attr, ok := p.attr[loc]; ok {
+		C.glDisableVertexAttribArray(attr)
+	}	
 }
 
 // SetUniform sets a uniform variable using the appropriate glUniform* or glUniformMatrix* call. It supports arrays of float32 and float64 or Mat4 objects.
