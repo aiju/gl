@@ -311,7 +311,10 @@ func (p *Program) DisableAttrib(loc string) {
 // NB: The underlying API does not support double precision, being able to pass float64 values is for convenience only.
 // BUG: It does not support non-square matrices.
 func (p *Program) SetUniform(loc string, data interface{}) {
-	uni := p.uni[loc]
+	uni, ok := p.uni[loc]
+	if !ok {
+		return
+	}
 	switch f := data.(type) {
 	case float32:
 		C.glUniform1f(uni, C.GLfloat(f))
