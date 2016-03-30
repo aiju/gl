@@ -36,6 +36,29 @@ func Mul4(a ...Mat4) Mat4 {
 	return r
 }
 
+// Apply4 applies the matrix to a 4-element vector
+func (m Mat4) Apply4 (v [4]float64) [4]float64 {
+	var r [4]float64
+
+	for i := 0; i < 4; i++ {
+		for j := 0; j < 4; j++ {
+			r[i] += m[i][j] * v[j]
+		}
+	}
+	return r
+}
+
+// Apply3 applies the matrix to a 3-element vector
+func (m Mat4) Apply3 (v [3]float64) [3]float64 {
+	r := [4]float64{m[0][3], m[1][3], m[2][3], m[3][3]}
+	for i := 0; i < 4; i++ {
+		for j := 0; j < 3; j++ {
+			r[i] += m[i][j] * v[j]
+		}
+	}
+	return [3]float64{r[0]/r[3], r[1]/r[3], r[2]/r[3]}
+}
+
 // RotZ returns a rotation matrix rotating r degrees around the z axis.
 func RotZ(r float64) Mat4 {
 	r *= deg
